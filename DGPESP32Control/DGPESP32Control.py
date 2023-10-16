@@ -1,5 +1,5 @@
 import asyncio
-from typing import Union
+from typing import Union, Optional
 from enum import Enum
 from DGPESP32BLE import DGPESP32BLE
 
@@ -42,7 +42,7 @@ def manufacturer_name() -> str:
     # Read-only property
     return __read_value(DGPESP32BLE.DeviceInformationCharEnum.MANUFACTURER_NAME)
 
-def power(en: Union[None, bool] = None) -> bool:
+def power(en: Optional[bool] = None) -> bool:
     # R/W property
     if en is None:
         # Get value
@@ -60,7 +60,7 @@ class ProjectorModeEnum(Enum):
     CONTROL     = 1 # Playing mode.
     PROGRAMMING = 2 # Programming mode.
 
-def mode(new_mode: Union[None, ProjectorModeEnum] = None) -> Union[ProjectorModeEnum, bool]:
+def mode(new_mode: Optional[ProjectorModeEnum] = None) -> Union[ProjectorModeEnum, bool]:
     # R/W property
     if new_mode is None:
         # Get value
@@ -68,6 +68,9 @@ def mode(new_mode: Union[None, ProjectorModeEnum] = None) -> Union[ProjectorMode
     else:
         # Set value
         power(False)
+        if mode() != ProjectorModeEnum.UNKNOWN:
+            raise RuntimeError('Failed to turn off projector.')
+        
         __write_value(
             DGPESP32BLE.ProjectorControlCharEnum.MODE,
             str(new_mode.value)
@@ -75,7 +78,7 @@ def mode(new_mode: Union[None, ProjectorModeEnum] = None) -> Union[ProjectorMode
         power(True)
         return mode() == new_mode # Check if the mode was set correctly
 
-def light_output(en: Union[None, bool] = None) -> bool:
+def light_output(en: Optional[bool] = None) -> bool:
     # R/W property
     if mode() != ProjectorModeEnum.CONTROL:
         raise RuntimeError('Cannot read/write light output when projector is not in control mode.')
@@ -91,7 +94,7 @@ def light_output(en: Union[None, bool] = None) -> bool:
             en
         )
     
-def r_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
+def r_brightness(new_brightness: Optional[int] = None) -> Union[int, bool]:
     # R/W property
     if mode() != ProjectorModeEnum.CONTROL:
         raise RuntimeError('Cannot read/write red brightness when projector is not in control mode.')
@@ -108,7 +111,7 @@ def r_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
             str(new_brightness)
         )
     
-def g_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
+def g_brightness(new_brightness: Optional[int] = None) -> Union[int, bool]:
     # R/W property
     if mode() != ProjectorModeEnum.CONTROL:
         raise RuntimeError('Cannot read/write green brightness when projector is not in control mode.')
@@ -125,7 +128,7 @@ def g_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
             str(new_brightness)
         )
     
-def b_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
+def b_brightness(new_brightness: Optional[int] = None) -> Union[int, bool]:
     # R/W property
     if mode() != ProjectorModeEnum.CONTROL:
         raise RuntimeError('Cannot read/write blue brightness when projector is not in control mode.')
@@ -142,7 +145,7 @@ def b_brightness(new_brightness: Union[None, int] = None) -> Union[int, bool]:
             str(new_brightness)
         )
     
-def video_address(new_address: Union[None, int] = None) -> Union[int, bool]:
+def video_address(new_address: Optional[int] = None) -> Union[int, bool]:
     # R/W property
     if mode() != ProjectorModeEnum.CONTROL:
         raise RuntimeError('Cannot read/write video address when projector is not in control mode.')
@@ -157,12 +160,38 @@ def video_address(new_address: Union[None, int] = None) -> Union[int, bool]:
             str(new_address)
         )
 
+def video_fps(new_fps: Optional[int] = None) -> Union[int, bool]:
+    # R/W property
+    if mode() != ProjectorModeEnum.CONTROL:
+        raise RuntimeError('Cannot read/write video FPS when projector is not in control mode.')
+    
+    if new_fps is None:
+        # Get value
+        return int(__read_value(DGPESP32BLE.ProjectorControlCharEnum.VIDEO_FPS))
+    else:
+        # Set value
+        return __write_value(
+            DGPESP32BLE.ProjectorControlCharEnum.VIDEO_FPS,
+            str(new_fps)
+        )
+    
+def change_playing(address: int, is_video: bool) -> bool:
+    ok = True
+    ok = ok and light_output(False)
+    ok = ok and video_address(address)
+    if is_video:
+        ok = ok and video_fps(25)
+    else:
+        ok = ok and video_fps(0)
+    ok = ok and light_output(True)
+    return ok
+
 class WiFiModeEnum(Enum):
     OFF = 0 # Wi-Fi is off.
     STA = 1 # Station mode.
     AP  = 2 # Access point mode.
 
-def wifi_mode(new_mode: Union[None, WiFiModeEnum] = None) -> Union[WiFiModeEnum, bool]:
+def wifi_mode(new_mode: Optional[WiFiModeEnum] = None) -> Union[WiFiModeEnum, bool]:
     # R/W property
     if new_mode is None:
         # Get value
@@ -174,7 +203,7 @@ def wifi_mode(new_mode: Union[None, WiFiModeEnum] = None) -> Union[WiFiModeEnum,
             str(new_mode.value)
         )
     
-def wifi_ssid(new_ssid: Union[None, str] = None) -> Union[str, bool]:
+def wifi_ssid(new_ssid: Optional[str] = None) -> Union[str, bool]:
     # R/W property
     if new_ssid is None:
         # Get value
@@ -186,7 +215,7 @@ def wifi_ssid(new_ssid: Union[None, str] = None) -> Union[str, bool]:
             new_ssid
         )
     
-def wifi_password(new_password: Union[None, str] = None) -> Union[str, bool]:
+def wifi_password(new_password: Optional[str] = None) -> Union[str, bool]:
     # R/W property
     if new_password is None:
         # Get value

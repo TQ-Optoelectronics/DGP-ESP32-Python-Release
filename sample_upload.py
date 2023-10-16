@@ -26,9 +26,23 @@ if connected:
     input('Press enter to continue')
 
     DGPESP32Control.mode(DGPESP32Control.ProjectorModeEnum.PROGRAMMING)
+    
     succeeded = upload_file('sample_upload/tq.img', 0x01280000)
-    if succeeded:
-        succeeded = upload_file('sample_upload/flash_header_0x80000_0x9FFFF.img', 0x00080000)
+    if not succeeded:
+        print('Failed to upload tq.img')
+        exit(1)
+
+    succeeded = upload_file('sample_upload/tq_vid.img', 0x01300000)
+    if not succeeded:
+        print('Failed to upload tq_vid.img')
+        exit(1)
+
+    succeeded = upload_file('sample_upload/flash_header_0x80000_0x9FFFF.img', 0x00080000)
+    if not succeeded:
+        print('Failed to upload flash_header_0x80000_0x9FFFF.img')
+        exit(1)
+        
     DGPESP32Control.mode(DGPESP32Control.ProjectorModeEnum.CONTROL)
-    DGPESP32Control.video_address(0x01280000)
+    DGPESP32Control.change_playing(address=0x01280000, is_video=False)
+    # DGPESP32Control.change_playing(address=0x01300000, is_video=True)
     pass
